@@ -1,0 +1,11 @@
+FlightNumber,PlaneID,DepartureCity,ArrivalCity
+F100,PL001,New York,Miami
+F101,PL003,San Francisco,Los Angeles
+F102,PL002,Los Angeles,Miami
+F103,PL005,Los Angeles,Seattle
+F104,PL004,New York,Boston
+F105,PL001,San Francisco,Los Angeles
+F106,PL005,New York,Seattle
+F107,PL002,Dallas,Los Angeles
+F108,PL004,Seattle,Dallas
+F109,PL001,Chicago,Miami
