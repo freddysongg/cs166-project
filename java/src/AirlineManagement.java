@@ -699,6 +699,13 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
+
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Date (YYYY-MM-DD): ");
            String date = in.readLine();
            
@@ -1137,6 +1144,13 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
+
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Date (YYYY-MM-DD): ");
            String date = in.readLine();
            
@@ -1174,6 +1188,12 @@ public static void feature1(AirlineManagement esql) {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
            
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            String query = String.format(
                "SELECT F.FlightNumber, " +
                "P.PlaneID, P.Make, P.Model, P.Year, " +
@@ -1197,16 +1217,15 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
-           System.out.print("Enter Flight Date (YYYY-MM-DD): ");
-           String flightDate = in.readLine();
-           System.out.print("Enter Customer ID: ");
-           String customerId = in.readLine();
-           
+
            // Validate flight number format
            if (!Validator.isValidFlightNumber(flightNum)) {
                System.out.println(ANSI_RED + "Invalid flight number format! Should be like 'F###'" + ANSI_RESET);
                return;
            }
+
+           System.out.print("Enter Flight Date (YYYY-MM-DD): ");
+           String flightDate = in.readLine();
            
            // Validate date format
            if (!Validator.isValidDate(flightDate)) {
@@ -1214,6 +1233,15 @@ public static void feature1(AirlineManagement esql) {
                return;
            }
            
+           System.out.print("Enter Customer ID: ");
+           String customerId = in.readLine();
+
+           // Validate customer ID format
+           if (!Validator.isValidCustomerId(customerId)) {
+               System.out.println(ANSI_RED + "Invalid customer ID format! Should be number > 0 (e.g., 1)" + ANSI_RESET);
+               return;
+           }
+
            esql.executeUpdate("BEGIN TRANSACTION");
            
            try {
