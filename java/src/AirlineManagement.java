@@ -440,9 +440,10 @@ public class AirlineManagement {
 private static class Validator {
     private static final Pattern FLIGHT_NUMBER_PATTERN = Pattern.compile("^F[0-9]{3}$");
     private static final Pattern PLANE_ID_PATTERN = Pattern.compile("^PL[0-9]{3}$");
+    private static final Pattern REPAIR_CODE_PATTERN = Pattern.compile("^RC[0-9]{3}$");
     private static final Pattern PILOT_ID_PATTERN = Pattern.compile("^P[0-9]{3}$");
     private static final Pattern TECH_ID_PATTERN = Pattern.compile("^T[0-9]{3}$");
-    private static final Pattern RESERVATION_ID_PATTERN = Pattern.compile("^R[0-9]+$");
+    private static final Pattern RESERVATION_ID_PATTERN = Pattern.compile("^R[0-9]{4}$");
     
     public static boolean isValidDate(String date) {
         try {
@@ -500,6 +501,11 @@ private static class Validator {
     public static boolean isValidPlaneId(String planeId) {
         if (planeId == null) return false;
         return PLANE_ID_PATTERN.matcher(planeId).matches();
+    }
+
+    public static boolean isValidRepairCode(String repairCode) {
+        if (repairCode == null) return false;
+        return REPAIR_CODE_PATTERN.matcher(repairCode).matches();
     }
     
     public static boolean isValidPilotId(String pilotId) {
@@ -624,7 +630,7 @@ public static void feature1(AirlineManagement esql) {
                       "FROM Schedule S, Flight F " +
                       "WHERE S.FlightNumber = F.FlightNumber " +
                       "AND S.FlightNumber = '" + flightNum + "' " +
-                      "AND S.ArrivalTime > S.DepartureTime " +  
+                    //   "AND S.ArrivalTime > S.DepartureTime " +  Not necessary
                       "ORDER BY CASE DayOfWeek " +
                       "    WHEN 'Monday' THEN 1 " +
                       "    WHEN 'Tuesday' THEN 2 " +
@@ -665,19 +671,19 @@ public static void feature1(AirlineManagement esql) {
            String query = "WITH FlightStats AS ( " +
                          "    SELECT FI.FlightNumber, " +
                          "           COUNT(*) as total_runs, " +
-                         "           SUM(CASE WHEN FI.DepartedOnTime AND FI.ArrivedOnTime THEN 1 ELSE 0 END) as on_time " +
+                         "           SUM(CASE WHEN FI.DepartedOnTime AND FI.ArrivedOnTime THEN 1 ELSE 0 END) as on_time, FI.NumOfStops " +
                          "    FROM FlightInstance FI " +
-                         "    GROUP BY FI.FlightNumber " +
+                         "    GROUP BY FI.FlightNumber, FI.NumOfStops " +
                          ") " +
                          "SELECT F.FlightNumber, F.DepartureCity, F.ArrivalCity, " +
-                         "       S.DepartureTime, S.ArrivalTime, " +
-                         "       ROUND(COALESCE(FS.on_time::FLOAT / NULLIF(FS.total_runs, 0) * 100, 0), 2) as on_time_percentage " +
+                         "       S.DepartureTime, S.ArrivalTime, FS.NumOfStops, " +
+                         "       ROUND(COALESCE(FS.on_time::FLOAT / NULLIF(FS.total_runs, 0) * 100, 0)::NUMERIC, 2) as on_time_percentage " +
                          "FROM Flight F " +
                          "JOIN Schedule S ON F.FlightNumber = S.FlightNumber " +
                          "LEFT JOIN FlightStats FS ON F.FlightNumber = FS.FlightNumber " +
                          "WHERE F.DepartureCity = '" + depCity + "' " +
                          "AND F.ArrivalCity = '" + arrCity + "' " +
-                         "AND S.DayOfWeek = TO_CHAR(DATE '" + date + "', 'Day') " +
+                         "AND S.DayOfWeek = TRIM(TO_CHAR(DATE '" + date + "', 'Day')) " +
                          "ORDER BY S.DepartureTime";
            
            int rowCount = esql.executeQueryAndPrintResult(query);
@@ -693,6 +699,13 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
+
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Date (YYYY-MM-DD): ");
            String date = in.readLine();
            
@@ -876,7 +889,7 @@ public static void feature1(AirlineManagement esql) {
            
            // Validate reservation ID format
            if (!Validator.isValidReservationId(reservationId)) {
-               System.out.println(ANSI_RED + "Invalid reservation ID format! Should be R followed by numbers (e.g., R1, R123)" + ANSI_RESET);
+               System.out.println(ANSI_RED + "Invalid reservation ID format! Should be R#### (e.g., R0001, R0123)" + ANSI_RESET);
                return;
            }
            
@@ -1131,6 +1144,13 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
+
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Date (YYYY-MM-DD): ");
            String date = in.readLine();
            
@@ -1168,6 +1188,12 @@ public static void feature1(AirlineManagement esql) {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
            
+           // Validate flight number format
+           if (!Validator.isValidFlightNumber(flightNum)) {
+               System.out.println(ANSI_RED + "Invalid flight number format! Should be F### (e.g., F100)" + ANSI_RESET);
+               return;
+           }
+
            String query = String.format(
                "SELECT F.FlightNumber, " +
                "P.PlaneID, P.Make, P.Model, P.Year, " +
@@ -1191,16 +1217,15 @@ public static void feature1(AirlineManagement esql) {
        try {
            System.out.print("\nEnter Flight Number: ");
            String flightNum = in.readLine();
-           System.out.print("Enter Flight Date (YYYY-MM-DD): ");
-           String flightDate = in.readLine();
-           System.out.print("Enter Customer ID: ");
-           String customerId = in.readLine();
-           
+
            // Validate flight number format
            if (!Validator.isValidFlightNumber(flightNum)) {
                System.out.println(ANSI_RED + "Invalid flight number format! Should be like 'F###'" + ANSI_RESET);
                return;
            }
+
+           System.out.print("Enter Flight Date (YYYY-MM-DD): ");
+           String flightDate = in.readLine();
            
            // Validate date format
            if (!Validator.isValidDate(flightDate)) {
@@ -1208,6 +1233,15 @@ public static void feature1(AirlineManagement esql) {
                return;
            }
            
+           System.out.print("Enter Customer ID: ");
+           String customerId = in.readLine();
+
+           // Validate customer ID format
+           if (!Validator.isValidCustomerId(customerId)) {
+               System.out.println(ANSI_RED + "Invalid customer ID format! Should be number > 0 (e.g., 1)" + ANSI_RESET);
+               return;
+           }
+
            esql.executeUpdate("BEGIN TRANSACTION");
            
            try {
@@ -1291,6 +1325,12 @@ public static void feature1(AirlineManagement esql) {
            System.out.print("\nEnter Pilot ID: ");
            String pilotId = in.readLine();
            
+           // Validate pilot ID format
+           if (!Validator.isValidPilotId(pilotId)) {
+               System.out.println(ANSI_RED + "Invalid pilot ID format! Should be P### (e.g., P001)" + ANSI_RESET);
+               return;
+           }
+
            String query = String.format(
                "SELECT MR.RequestID, MR.PlaneID, " +
                "P.Make, P.Model, " +
@@ -1326,6 +1366,13 @@ public static void feature1(AirlineManagement esql) {
            
            System.out.print("Enter Repair Code: ");
            String repairCode = in.readLine();
+
+           // Validate Repair Code format
+           if (!Validator.isValidRepairCode(repairCode)) {
+               System.out.println(ANSI_RED + "Invalid Repair Code format! Should be RC### (e.g., RC001)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Technician ID: ");
            String techId = in.readLine();
            
@@ -1410,6 +1457,13 @@ public static void feature1(AirlineManagement esql) {
            
            System.out.print("Enter Repair Code: ");
            String repairCode = in.readLine();
+
+           // Validate Repair Code format
+           if (!Validator.isValidRepairCode(repairCode)) {
+               System.out.println(ANSI_RED + "Invalid Repair Code format! Should be RC### (e.g., RC001)" + ANSI_RESET);
+               return;
+           }
+
            System.out.print("Enter Pilot ID: ");
            String pilotId = in.readLine();
            
