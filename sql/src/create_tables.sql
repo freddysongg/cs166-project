@@ -36,7 +36,7 @@ CREATE TABLE Schedule (
     DayOfWeek TEXT,
     DepartureTime TIME,
     ArrivalTime TIME,
-    FOREIGN KEY (FlightNumber) REFERENCES Flight(FlightNumber)
+    FOREIGN KEY (FlightNumber) REFERENCES Flight(FlightNumber) ON DELETE RESTRICT
 );
 
 -- FlightInstance Table
@@ -50,7 +50,7 @@ CREATE TABLE FlightInstance (
     SeatsSold INTEGER,
     NumOfStops INTEGER,
     TicketCost DECIMAL(10,2),
-    FOREIGN KEY (FlightNumber) REFERENCES Flight(FlightNumber)
+    FOREIGN KEY (FlightNumber) REFERENCES Flight(FlightNumber) ON DELETE RESTRICT
 );
 
 -- Customer Table
